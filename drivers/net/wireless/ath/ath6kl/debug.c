@@ -25,6 +25,8 @@
 #include "debug.h"
 #include "target.h"
 
+static char ath6kl_printk_buf[1024];
+
 struct ath6kl_fwlog_slot {
 	__le32 timestamp;
 	__le32 length;
@@ -39,6 +41,7 @@ struct ath6kl_fwlog_slot {
 
 int ath6kl_printk(const char *level, const char *fmt, ...)
 {
+#if 0
 	struct va_format vaf;
 	va_list args;
 	int rtn;
@@ -51,6 +54,16 @@ int ath6kl_printk(const char *level, const char *fmt, ...)
 	rtn = printk("%sath6kl: %pV", level, &vaf);
 
 	va_end(args);
+#else
+	va_list args;
+	int rtn;
+
+	va_start(args, fmt);
+	vscnprintf(ath6kl_printk_buf, sizeof(ath6kl_printk_buf), fmt, args);
+	va_end(args);
+
+	rtn = printk("%sath6kl: %s", level, ath6kl_printk_buf);
+#endif
 
 	return rtn;
 }
@@ -60,6 +73,7 @@ EXPORT_SYMBOL(ath6kl_printk);
 
 void ath6kl_dbg(enum ATH6K_DEBUG_MASK mask, const char *fmt, ...)
 {
+#if 0
 	struct va_format vaf;
 	va_list args;
 
@@ -74,6 +88,19 @@ void ath6kl_dbg(enum ATH6K_DEBUG_MASK mask, const char *fmt, ...)
 	ath6kl_printk(KERN_DEBUG, "%pV", &vaf);
 
 	va_end(args);
+#else
+	va_list args;
+
+	if (!(debug_mask & mask))
+		return;
+
+	va_start(args, fmt);
+	vscnprintf(ath6kl_printk_buf, sizeof(ath6kl_printk_buf), fmt, args);
+	va_end(args);
+
+	printk("ath6kl: %s", ath6kl_printk_buf);
+
+#endif
 }
 EXPORT_SYMBOL(ath6kl_dbg);
 
